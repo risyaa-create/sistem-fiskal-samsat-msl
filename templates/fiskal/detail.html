@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Detail Dokumen Fiskal - {{ dokumen.nomor_polisi }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <a href="{{ url_for('fiskal_index') }}" class="btn btn-outline btn-sm" style="margin-bottom: 0.5rem;">&larr; Kembali ke Daftar Arsip</a>
+        <h2 style="color: var(--primary-dark); font-size: 1.45rem;">
+            Detail Arsip Fiskal: {{ dokumen.nomor_polisi }}
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">
+            Nomor Surat: <strong>{{ dokumen.nomor_surat }}</strong> &bull; Diunggah: {{ dokumen.created_at.strftime('%d-%m-%Y %H:%M') }}
+        </p>
+    </div>
+
+    <!-- TOMBOL AKSI ATAS -->
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        {% if dokumen.is_deleted %}
+            <span class="badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.85rem; padding: 0.5rem 1rem; border: 1px solid #fca5a5;">
+                🗑️ Data Diarsipkan (Soft Delete)
+            </span>
+        {% else %}
+            <!-- Badge Status Verifikasi -->
+            {% if dokumen.status_verifikasi == 'Terverifikasi' %}
+                <span class="badge badge-verified" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                    ✓ Terverifikasi Sah
+                </span>
+            {% else %}
+                <span class="badge badge-pending" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                    ⏳ Belum Terverifikasi
+                </span>
+
+                <!-- Tombol Verifikasi -->
+                <form id="form-verifikasi" method="POST" action="{{ url_for('fiskal_verifikasi', id=dokumen.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-success">
+                        ✓ Verifikasi Dokumen Ini
+                    </button>
+                </form>
+            {% endif %}
+
+            <!-- Tombol Edit Data -->
+            <a href="{{ url_for('fiskal_edit', id=dokumen.id) }}" class="btn btn-outline" style="border-color: #0284c7; color: #0284c7;">
+                ✏️ Edit Data
+            </a>
+
+            <!-- Tombol Hapus Data -->
+            <form id="form-hapus" method="POST" action="{{ url_for('fiskal_delete', id=dokumen.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-logout" style="background: #dc2626; color: white;">
+                    🗑️ Hapus Data
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if dokumen.is_deleted %}
+<div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+    <span>
+        <strong>Pemberitahuan Arsip:</strong> Dokumen fiskal ini telah dihapus/diarsipkan secara soft delete pada 
+        <strong>{{ dokumen.deleted_at.strftime('%d-%m-%Y %H:%M') if dokumen.deleted_at else '-' }}</strong> 
+        oleh Administrator <strong>{{ dokumen.deleter.nama_lengkap if dokumen.deleter else 'Admin' }}</strong>. 
+        Data fisik dan riwayat audit tetap tersimpan di sistem.
+    </span>
+</div>
+{% endif %}
+
+<!-- SPLIT VIEW: VIEWER DOKUMEN ASLI & 16 FIELD DATA -->
+<div class="split-view">
+
+    <!-- PANEL KIRI: PENAMPIL DOKUMEN ASLI -->
+    <div class="viewer-card">
+        <div class="viewer-header">
+            <span><strong>Berkas Asli:</strong> {{ dokumen.file_name }}</span>
+            <a href="{{ url_for('serve_document', filename=dokumen.file_path) }}" target="_blank" class="btn btn-outline btn-sm" style="color: white; border-color: #64748b;">
+                Buka / Unduh ↗
+            </a>
+        </div>
+
+        <div class="viewer-body">
+            {% if dokumen.file_type in ['jpg', 'jpeg', 'png'] %}
+                <img src="{{ url_for('serve_document', filename=dokumen.file_path) }}" alt="Dokumen Fisik Asli">
+            {% elif dokumen.file_type == 'pdf' %}
+                <iframe src="{{ url_for('serve_document', filename=dokumen.file_path) }}" style="width: 100%; height: 600px; border: none;"></iframe>
+            {% else %}
+                <div class="viewer-text">
+                    <p style="margin-bottom: 0.5rem; font-weight: bold; color: var(--primary-color);">[Pratinjau Berkas Dokumen]:</p>
+                    <a href="{{ url_for('serve_document', filename=dokumen.file_path) }}" target="_blank" class="btn btn-primary btn-sm" style="margin-top: 1rem;">
+                        Unduh Berkas Dokumen ({{ dokumen.file_type|upper }})
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- PANEL KANAN: 16 FIELD DATA LENGKAP -->
+    <div>
+        <div class="card" style="margin-bottom: 1.25rem;">
+            <div class="card-header">
+                <h3 class="card-title">16 Field Kesatuan Data Fiskal</h3>
+                {% if not dokumen.is_deleted %}
+                <a href="{{ url_for('fiskal_edit', id=dokumen.id) }}" class="btn btn-outline btn-sm">
+                    ✏️ Edit
+                </a>
+                {% endif %}
+            </div>
+
+            <table class="detail-table">
+                <tbody>
+                    <tr>
+                        <th>1. Nomor Surat</th>
+                        <td><strong>{{ dokumen.nomor_surat }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>2. Nomor Polisi</th>
+                        <td>
+                            <span style="font-family: monospace; font-size: 1.05rem; font-weight: 700; background: #e2e8f0; padding: 2px 8px; border-radius: 4px;">
+                                {{ dokumen.nomor_polisi }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>3. Nama Pemilik</th>
+                        <td>{{ dokumen.nama_pemilik }}</td>
+                    </tr>
+                    <tr>
+                        <th>4. Alamat Pemilik</th>
+                        <td>{{ dokumen.alamat }}</td>
+                    </tr>
+                    <tr>
+                        <th>5. Merk/Type Kendaraan</th>
+                        <td>{{ dokumen.merk_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>6. Tahun Kendaraan</th>
+                        <td>{{ dokumen.tahun_kendaraan }}</td>
+                    </tr>
+                    <tr>
+                        <th>7. CC Kendaraan</th>
+                        <td>{{ dokumen.cc_kendaraan }} cc</td>
+                    </tr>
+                    <tr>
+                        <th>8. Warna</th>
+                        <td>{{ dokumen.warna }}</td>
+                    </tr>
+                    <tr>
+                        <th>9. Nomor Rangka</th>
+                        <td><code style="font-size: 0.95rem; font-weight: 600;">{{ dokumen.nomor_rangka }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>10. Nomor Mesin</th>
+                        <td><code style="font-size: 0.95rem; font-weight: 600;">{{ dokumen.nomor_mesin }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>11. Nomor STNK</th>
+                        <td>{{ dokumen.nomor_stnk }}</td>
+                    </tr>
+                    <tr>
+                        <th>12. Nomor Kohir</th>
+                        <td>
+                            {% if dokumen.nomor_kohir %}
+                                {{ dokumen.nomor_kohir }}
+                            {% else %}
+                                <em style="color: var(--text-muted);">(Tidak Ada)</em>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>13. Nama Pemohon/Perwakilan</th>
+                        <td><strong>{{ dokumen.nama_pemohon }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>14. Daerah Mutasi</th>
+                        <td><span style="color: var(--primary-color); font-weight: 600;">{{ dokumen.daerah_mutasi }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>15. Tanggal Fiskal</th>
+                        <td>{{ dokumen.tanggal_fiskal.strftime('%d-%m-%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <th>16. Kategori Fiskal</th>
+                        <td>
+                            <span class="badge {{ 'badge-sumut' if dokumen.kategori_fiskal == 'Fiskal Sumatera Utara' else 'badge-provinsi' }}">
+                                {{ dokumen.kategori_fiskal }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- STATUS & LOG AUDIT -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" style="font-size: 1rem;">Status & Riwayat Verifikasi</h3>
+            </div>
+
+            <div style="font-size: 0.85rem; margin-bottom: 1rem;">
+                <p><strong>Status Saat Ini:</strong> {{ dokumen.status_verifikasi }}</p>
+                {% if dokumen.verified_at %}
+                    <p><strong>Diverifikasi Oleh:</strong> {{ dokumen.verifier.nama_lengkap if dokumen.verifier else 'Admin' }}</p>
+                    <p><strong>Waktu Verifikasi:</strong> {{ dokumen.verified_at.strftime('%d-%m-%Y %H:%M:%S') }} WIB</p>
+                {% else %}
+                    <p style="color: var(--warning);"><em>Menunggu pemeriksaan fisik dan pencocokan oleh petugas berwenang.</em></p>
+                {% endif %}
+            </div>
+
+            <div style="border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Riwayat Audit:</span>
+                <ul style="list-style: none; margin-top: 6px; font-size: 0.8rem; display: flex; flex-direction: column; gap: 6px;">
+                    {% for log in logs %}
+                    <li style="padding: 6px 10px; background: #f8fafc; border-radius: 4px; border-left: 3px solid {{ '#dc2626' if log.action == 'HAPUS' else ('#0284c7' if log.action == 'EDIT' else '#16a34a') }};">
+                        <strong>[{{ log.action }}]</strong> {{ log.catatan }} 
+                        <span style="color: var(--text-muted); font-size: 0.75rem;">({{ log.created_at.strftime('%d/%m/%Y %H:%M') }} oleh {{ log.user.nama_lengkap if log.user else 'Sistem' }})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

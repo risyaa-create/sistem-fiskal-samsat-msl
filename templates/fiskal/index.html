@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Daftar Arsip Data Fiskal{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="color: var(--primary-dark); font-size: 1.45rem;">Pencarian & Arsip Data Fiskal</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Pencarian cepat berkas fiskal mutasi kendaraan di SAMSAT Medan Selatan.
+        </p>
+    </div>
+    <a href="{{ url_for('fiskal_create') }}" class="btn btn-primary">
+        + Upload Dokumen Baru
+    </a>
+</div>
+
+<!-- FORM FILTER & PENCARIAN -->
+<form method="GET" action="{{ url_for('fiskal_index') }}" class="filter-bar">
+    <div class="form-group" style="flex: 2; min-width: 250px;">
+        <label class="form-label" for="q">Pencarian Cepat</label>
+        <input 
+            type="text" 
+            id="q" 
+            name="q" 
+            value="{{ query }}" 
+            class="form-control uppercase-input" 
+            placeholder="Cari No. Polisi, No. Rangka, No. Mesin, No. Surat, atau Nama Pemilik..."
+        >
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="kategori">Kategori Fiskal</label>
+        <select id="kategori" name="kategori" class="form-control">
+            <option value="">-- Semua Kategori --</option>
+            <option value="Fiskal Sumatera Utara" {{ 'selected' if kategori == 'Fiskal Sumatera Utara' else '' }}>Fiskal Sumatera Utara</option>
+            <option value="Fiskal Provinsi" {{ 'selected' if kategori == 'Fiskal Provinsi' else '' }}>Fiskal Provinsi</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="status">Status Verifikasi</label>
+        <select id="status" name="status" class="form-control">
+            <option value="">-- Semua Status --</option>
+            <option value="Belum Terverifikasi" {{ 'selected' if status == 'Belum Terverifikasi' else '' }}>Belum Terverifikasi</option>
+            <option value="Terverifikasi" {{ 'selected' if status == 'Terverifikasi' else '' }}>Terverifikasi</option>
+        </select>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+        <button type="submit" class="btn btn-primary">
+            🔍 Cari
+        </button>
+        {% if query or kategori or status %}
+            <a href="{{ url_for('fiskal_index') }}" class="btn btn-outline" title="Reset Pencarian">
+                Reset
+            </a>
+        {% endif %}
+    </div>
+</form>
+
+<!-- TABEL HASIL ARSIP -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Hasil Data Fiskal ({{ total_hasil }} Dokumen Ditemukan)</h3>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>No. Surat</th>
+                    <th>No. Polisi</th>
+                    <th>Nama Pemilik</th>
+                    <th>Merk / Type</th>
+                    <th>No. Rangka</th>
+                    <th>No. Mesin</th>
+                    <th>Daerah Mutasi</th>
+                    <th>Tanggal Fiskal</th>
+                    <th>Kategori</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if dokumen_list %}
+                    {% for doc in dokumen_list %}
+                    <tr>
+                        <td><strong>{{ doc.nomor_surat }}</strong></td>
+                        <td>
+                            <span style="font-family: monospace; font-weight: 700; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">
+                                {{ doc.nomor_polisi }}
+                            </span>
+                        </td>
+                        <td>{{ doc.nama_pemilik }}</td>
+                        <td>{{ doc.merk_type }}</td>
+                        <td><code style="font-size: 0.78rem;">{{ doc.nomor_rangka }}</code></td>
+                        <td><code style="font-size: 0.78rem;">{{ doc.nomor_mesin }}</code></td>
+                        <td>{{ doc.daerah_mutasi }}</td>
+                        <td>{{ doc.tanggal_fiskal.strftime('%d-%m-%Y') }}</td>
+                        <td>
+                            <span class="badge {{ 'badge-sumut' if doc.kategori_fiskal == 'Fiskal Sumatera Utara' else 'badge-provinsi' }}">
+                                {{ doc.kategori_fiskal }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if doc.status_verifikasi == 'Terverifikasi' %}
+                                <span class="badge badge-verified">Terverifikasi</span>
+                            {% else %}
+                                <span class="badge badge-pending">Belum Terverifikasi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <a href="{{ url_for('fiskal_detail', id=doc.id) }}" class="btn btn-primary btn-sm" title="Lihat Detail">
+                                    👁️ Detail
+                                </a>
+                                <form method="POST" action="{{ url_for('fiskal_delete', id=doc.id) }}" style="display: inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data fiskal {{ doc.nomor_polisi }}?');">
+                                    <button type="submit" class="btn btn-sm btn-logout" style="background: #dc2626; color: white;" title="Hapus Data">
+                                        🗑️ Hapus
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                            Tidak ditemukan data fiskal yang sesuai dengan kriteria pencarian.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

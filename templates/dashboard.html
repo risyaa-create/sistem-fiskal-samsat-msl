@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Arsip Fiskal{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="color: var(--primary-dark); font-size: 1.45rem;">Dashboard Arsip Fiskal</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Ringkasan data digitalisasi dan status verifikasi arsip mutasi kendaraan.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('fiskal_create') }}" class="btn btn-primary">
+            📄 + Upload Dokumen Fiskal
+        </a>
+        <a href="{{ url_for('fiskal_index') }}" class="btn btn-outline">
+            🔍 Cari Arsip Fiskal
+        </a>
+    </div>
+</div>
+
+<!-- STATS CARDS -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">Total Dokumen Fiskal</span>
+        <span class="stat-value">{{ total_dokumen }}</span>
+        <span class="stat-badge">Seluruh data yang terinput</span>
+    </div>
+
+    <div class="stat-card" style="border-left: 4px solid var(--warning);">
+        <span class="stat-label">Belum Terverifikasi</span>
+        <span class="stat-value" style="color: var(--warning);">{{ belum_verifikasi }}</span>
+        <span class="stat-badge">Memerlukan pemeriksaan admin</span>
+    </div>
+
+    <div class="stat-card" style="border-left: 4px solid var(--success);">
+        <span class="stat-label">Terverifikasi</span>
+        <span class="stat-value" style="color: var(--success);">{{ terverifikasi }}</span>
+        <span class="stat-badge">Data resmi dan sah</span>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">Fiskal Sumut</span>
+        <span class="stat-value" style="color: #0369a1;">{{ fiskal_sumut }}</span>
+        <span class="stat-badge">Mutasi wilayah Sumatera Utara</span>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">Fiskal Provinsi</span>
+        <span class="stat-value" style="color: #6b21a8;">{{ fiskal_provinsi }}</span>
+        <span class="stat-badge">Mutasi antar provinsi</span>
+    </div>
+</div>
+
+<!-- DOKUMEN TERBARU -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Arsip Fiskal Terbaru</h3>
+        <a href="{{ url_for('fiskal_index') }}" class="btn btn-outline btn-sm">Lihat Semua Data &rarr;</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>No. Surat</th>
+                    <th>No. Polisi</th>
+                    <th>Nama Pemilik</th>
+                    <th>Merk / Type</th>
+                    <th>Daerah Mutasi</th>
+                    <th>Tanggal Fiskal</th>
+                    <th>Kategori</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if dokumen_terbaru %}
+                    {% for doc in dokumen_terbaru %}
+                    <tr>
+                        <td><strong>{{ doc.nomor_surat }}</strong></td>
+                        <td><span style="font-family: monospace; font-weight: 700; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">{{ doc.nomor_polisi }}</span></td>
+                        <td>{{ doc.nama_pemilik }}</td>
+                        <td>{{ doc.merk_type }}</td>
+                        <td>{{ doc.daerah_mutasi }}</td>
+                        <td>{{ doc.tanggal_fiskal.strftime('%d-%m-%Y') }}</td>
+                        <td>
+                            <span class="badge {{ 'badge-sumut' if doc.kategori_fiskal == 'Fiskal Sumatera Utara' else 'badge-provinsi' }}">
+                                {{ doc.kategori_fiskal }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if doc.status_verifikasi == 'Terverifikasi' %}
+                                <span class="badge badge-verified">Terverifikasi</span>
+                            {% else %}
+                                <span class="badge badge-pending">Belum Terverifikasi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('fiskal_detail', id=doc.id) }}" class="btn btn-outline btn-sm">
+                                Periksa Detail
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            Belum ada dokumen fiskal yang tercatat. Silakan unggah dokumen pertama Anda.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

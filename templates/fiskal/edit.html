@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Data Fiskal - {{ dokumen.nomor_polisi }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('fiskal_detail', id=dokumen.id) }}" class="btn btn-outline btn-sm" style="margin-bottom: 0.5rem;">
+        &larr; Batal & Kembali ke Detail
+    </a>
+    <h2 style="color: var(--primary-dark); font-size: 1.45rem;">
+        Edit Data Dokumen Fiskal: {{ dokumen.nomor_polisi }}
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Perbarui data pada 16 field resmi. Setiap perubahan akan dicatat dalam Log Audit sistem.
+    </p>
+</div>
+
+<form method="POST" action="{{ url_for('fiskal_edit', id=dokumen.id) }}" enctype="multipart/form-data">
+
+    <!-- CARD 1: BERKAS DOKUMEN FISIK -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">1. Berkas Dokumen Fisik Asli</h3>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 0.85rem; background: #f8fafc; border-radius: var(--radius); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+            <div>
+                <p style="font-size: 0.85rem; font-weight: 600; color: var(--primary-dark);">
+                    Berkas Saat Ini: <code>{{ dokumen.file_name }}</code> ({{ dokumen.file_type|upper }})
+                </p>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">
+                    Biarkan kosong jika Anda tidak ingin mengganti berkas dokumen fisik.
+                </p>
+            </div>
+            <a href="{{ url_for('serve_document', filename=dokumen.file_path) }}" target="_blank" class="btn btn-outline btn-sm">
+                Lihat Berkas Saat Ini ↗
+            </a>
+        </div>
+
+        <div class="dropzone" onclick="document.getElementById('dokumen_file').click()">
+            <div style="font-size: 1.8rem; margin-bottom: 0.35rem;">🔄</div>
+            <p style="font-weight: 600; color: var(--primary-dark);">Klik untuk mengganti berkas dokumen (Opsional)</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                Format yang didukung: <strong>JPG, JPEG, PNG, PDF</strong> (Maksimal 16 MB).
+            </p>
+            <input 
+                type="file" 
+                id="dokumen_file" 
+                name="dokumen_file" 
+                accept=".jpg,.jpeg,.png,.pdf" 
+                style="display: none;"
+            >
+        </div>
+
+        <div id="file-preview-container" class="file-preview">
+            <p id="file-preview-text"></p>
+            <img id="file-preview-image" src="" alt="Pratinjau Dokumen Pengganti" style="max-height: 180px; margin-top: 8px; border-radius: 4px; display: none;">
+        </div>
+    </div>
+
+    <!-- CARD 2: FORM EDIT 16 FIELD -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">2. Kelengkapan 16 Field Data Fiskal</h3>
+        </div>
+
+        <!-- SEKSI A: INFORMASI SURAT & MUTASI -->
+        <h4 style="font-size: 0.95rem; color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.35rem;">
+            A. Informasi Surat & Kategori Mutasi
+        </h4>
+        <div class="form-grid-16" style="margin-bottom: 1.5rem;">
+            <!-- 1. Nomor Surat -->
+            <div class="form-group">
+                <label class="form-label" for="nomor_surat">1. Nomor Surat *</label>
+                <input type="text" id="nomor_surat" name="nomor_surat" value="{{ dokumen.nomor_surat }}" class="form-control" required>
+            </div>
+
+            <!-- 15. Tanggal Fiskal -->
+            <div class="form-group">
+                <label class="form-label" for="tanggal_fiskal">15. Tanggal Fiskal *</label>
+                <input type="date" id="tanggal_fiskal" name="tanggal_fiskal" value="{{ dokumen.tanggal_fiskal.strftime('%Y-%m-%d') }}" class="form-control" required>
+            </div>
+
+            <!-- 16. Kategori Fiskal -->
+            <div class="form-group">
+                <label class="form-label" for="kategori_fiskal">16. Kategori Fiskal *</label>
+                <select id="kategori_fiskal" name="kategori_fiskal" class="form-control" required>
+                    <option value="Fiskal Sumatera Utara" {{ 'selected' if dokumen.kategori_fiskal == 'Fiskal Sumatera Utara' else '' }}>Fiskal Sumatera Utara</option>
+                    <option value="Fiskal Provinsi" {{ 'selected' if dokumen.kategori_fiskal == 'Fiskal Provinsi' else '' }}>Fiskal Provinsi</option>
+                </select>
+            </div>
+
+            <!-- 14. Daerah Mutasi -->
+            <div class="form-group">
+                <label class="form-label" for="daerah_mutasi">14. Daerah Mutasi *</label>
+                <input type="text" id="daerah_mutasi" name="daerah_mutasi" value="{{ dokumen.daerah_mutasi }}" class="form-control" required>
+            </div>
+        </div>
+
+        <!-- SEKSI B: IDENTIFIKASI KENDARAAN -->
+        <h4 style="font-size: 0.95rem; color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.35rem;">
+            B. Identifikasi Kendaraan Bermotor
+        </h4>
+        <div class="form-grid-16" style="margin-bottom: 1.5rem;">
+            <!-- 2. Nomor Polisi -->
+            <div class="form-group">
+                <label class="form-label" for="nomor_polisi">2. Nomor Polisi *</label>
+                <input type="text" id="nomor_polisi" name="nomor_polisi" value="{{ dokumen.nomor_polisi }}" class="form-control uppercase-input" required>
+            </div>
+
+            <!-- 5. Merk/Type Kendaraan -->
+            <div class="form-group">
+                <label class="form-label" for="merk_type">5. Merk/Type Kendaraan *</label>
+                <input type="text" id="merk_type" name="merk_type" value="{{ dokumen.merk_type }}" class="form-control" required>
+            </div>
+
+            <!-- 6. Tahun Kendaraan -->
+            <div class="form-group">
+                <label class="form-label" for="tahun_kendaraan">6. Tahun Kendaraan *</label>
+                <input type="text" id="tahun_kendaraan" name="tahun_kendaraan" value="{{ dokumen.tahun_kendaraan }}" class="form-control" maxlength="4" required>
+            </div>
+
+            <!-- 7. CC Kendaraan -->
+            <div class="form-group">
+                <label class="form-label" for="cc_kendaraan">7. CC Kendaraan *</label>
+                <input type="text" id="cc_kendaraan" name="cc_kendaraan" value="{{ dokumen.cc_kendaraan }}" class="form-control" required>
+            </div>
+
+            <!-- 8. Warna -->
+            <div class="form-group">
+                <label class="form-label" for="warna">8. Warna *</label>
+                <input type="text" id="warna" name="warna" value="{{ dokumen.warna }}" class="form-control" required>
+            </div>
+
+            <!-- 9. Nomor Rangka -->
+            <div class="form-group">
+                <label class="form-label" for="nomor_rangka">9. Nomor Rangka *</label>
+                <input type="text" id="nomor_rangka" name="nomor_rangka" value="{{ dokumen.nomor_rangka }}" class="form-control uppercase-input" required>
+            </div>
+
+            <!-- 10. Nomor Mesin -->
+            <div class="form-group">
+                <label class="form-label" for="nomor_mesin">10. Nomor Mesin *</label>
+                <input type="text" id="nomor_mesin" name="nomor_mesin" value="{{ dokumen.nomor_mesin }}" class="form-control uppercase-input" required>
+            </div>
+
+            <!-- 11. Nomor STNK -->
+            <div class="form-group">
+                <label class="form-label" for="nomor_stnk">11. Nomor STNK *</label>
+                <input type="text" id="nomor_stnk" name="nomor_stnk" value="{{ dokumen.nomor_stnk }}" class="form-control" required>
+            </div>
+
+            <!-- 12. Nomor Kohir -->
+            <div class="form-group">
+                <label class="form-label" for="nomor_kohir">12. Nomor Kohir (jika ada)</label>
+                <input type="text" id="nomor_kohir" name="nomor_kohir" value="{{ dokumen.nomor_kohir or '' }}" class="form-control" placeholder="Kosongkan jika tidak ada">
+            </div>
+        </div>
+
+        <!-- SEKSI C: DATA PEMILIK & PEMOHON -->
+        <h4 style="font-size: 0.95rem; color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.35rem;">
+            C. Data Pemilik & Pemohon
+        </h4>
+        <div class="form-grid-16" style="margin-bottom: 1rem;">
+            <!-- 3. Nama Pemilik -->
+            <div class="form-group">
+                <label class="form-label" for="nama_pemilik">3. Nama Pemilik *</label>
+                <input type="text" id="nama_pemilik" name="nama_pemilik" value="{{ dokumen.nama_pemilik }}" class="form-control" required>
+            </div>
+
+            <!-- 13. Nama Pemohon/Perwakilan -->
+            <div class="form-group">
+                <label class="form-label" for="nama_pemohon">13. Nama Pemohon/Perwakilan *</label>
+                <input type="text" id="nama_pemohon" name="nama_pemohon" value="{{ dokumen.nama_pemohon }}" class="form-control" required>
+            </div>
+
+            <!-- 4. Alamat -->
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label" for="alamat">4. Alamat Pemilik *</label>
+                <textarea id="alamat" name="alamat" rows="2" class="form-control" required>{{ dokumen.alamat }}</textarea>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <a href="{{ url_for('fiskal_detail', id=dokumen.id) }}" class="btn btn-outline">Batal</a>
+            <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem;">
+                💾 Simpan Perubahan Data
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}

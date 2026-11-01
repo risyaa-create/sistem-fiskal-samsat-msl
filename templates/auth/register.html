@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Daftar Akun Petugas{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-header">
+            <h2>Pendaftaran Petugas Baru</h2>
+            <p>Registrasi Akun Tata Usaha SAMSAT Medan Selatan</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="form-group" style="margin-bottom: 1.15rem;">
+                <label class="form-label" for="username">Username / NIP *</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    class="form-control" 
+                    placeholder="Contoh: petugas_fiskal" 
+                    required 
+                    autofocus
+                >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.15rem;">
+                <label class="form-label" for="nama_lengkap">Nama Lengkap Petugas *</label>
+                <input 
+                    type="text" 
+                    id="nama_lengkap" 
+                    name="nama_lengkap" 
+                    class="form-control" 
+                    placeholder="Nama lengkap dan gelar" 
+                    required
+                >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.15rem;">
+                <label class="form-label" for="password">Password *</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-control" 
+                    placeholder="Minimal 6 karakter" 
+                    minlength="6"
+                    required
+                >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" for="konfirmasi_password">Konfirmasi Password *</label>
+                <input 
+                    type="password" 
+                    id="konfirmasi_password" 
+                    name="konfirmasi_password" 
+                    class="form-control" 
+                    placeholder="Ketik ulang password" 
+                    minlength="6"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+                📝 Daftar Akun Sekarang
+            </button>
+        </form>
+
+        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.88rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+            Sudah memiliki akun? 
+            <a href="{{ url_for('login') }}" style="color: var(--primary-color); font-weight: 700; text-decoration: none;">
+                Masuk di sini &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
